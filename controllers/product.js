@@ -44,6 +44,16 @@ export const getProducts = async (req, res) => {
   }
 };
 
+export const getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(id);
+    const product = await ProductModel.findById(id);
+    res.status(200).send(product);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
 /**
  * @swagger
  * /product:

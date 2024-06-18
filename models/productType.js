@@ -7,14 +7,26 @@ const productTypeSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
-    optionName: {
+    name: {
       type: String,
       required: true,
     },
-    optionPrice: {
+    optimizeDescription: {
+      type: String,
+    },
+    renewalCostDescription: {
+      type: String,
+    },
+    bonusPeriod: {
+      type: String,
+    },
+    salePrice: {
       type: Number,
     },
     basePrice: {
+      type: Number,
+    },
+    pricePerMonth: {
       type: Number,
     },
     period: {
@@ -24,7 +36,11 @@ const productTypeSchema = new mongoose.Schema(
     discount: {
       type: Number,
     },
-    upSell: {
+    bestChoice: {
+      type: Boolean,
+      default: false,
+    },
+    popular: {
       type: Boolean,
       default: false,
     },

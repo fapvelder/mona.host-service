@@ -25,6 +25,7 @@ const allowOrigin = [
   process.env.NGROK,
   "*",
 ];
+console.log(process.env.IP);
 const corsOptions = {
   credentials: true,
   origin: "*",
@@ -40,6 +41,7 @@ const corsOptions = {
   methods: "GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE",
   preflightContinue: false,
 };
+
 app.use(cors(corsOptions));
 app.get("/", (req, res) => {
   res.send("SUCCESS");
@@ -57,6 +59,8 @@ setupSwagger(app);
 mongoose.connect(process.env.URI_MONGODB).catch((err) => {
   console.log("ERR", err);
 });
+
+// Example usage
 app.listen(5000, () => {
   console.log("server is listening on port 5000");
 });
