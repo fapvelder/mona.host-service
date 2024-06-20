@@ -93,9 +93,11 @@ export const getProductTypes = async (req, res) => {
   try {
     const { name } = req.query;
     const query = name ? { name: { $regex: name, $options: "i" } } : {};
-    const products = await ProductTypeModel.find(query).sort({
-      createdAt: -1,
-    });
+    const products = await ProductTypeModel.find(query)
+      .sort({
+        createdAt: -1,
+      })
+      .populate("product");
     res.status(200).send(products);
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -402,11 +404,23 @@ export const createProductType = async (req, res, next) => {
 export const updateProductType = async (req, res) => {
   try {
     const { id } = req.params;
+    const { productData } = req.body;
     const updatedProductType = await ProductTypeModel.findByIdAndUpdate(
       id,
-      req.body,
+      {
+        product: productData.product,
+        information: {
+          feature_tooltip: productData.featureTooltip,
+          features: productData.features,
+          securities: productData.securities,
+          services: productData.services,
+          specifications: productData.specifications,
+        },
+        ...productData,
+      },
       { new: true }
     );
+
     res.status(200).json(updatedProductType);
   } catch (err) {
     res.status(500).send({ message: err.message });

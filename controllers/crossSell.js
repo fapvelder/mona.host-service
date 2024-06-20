@@ -54,19 +54,16 @@ import { CrossSellModel } from "../models/crossSell.js";
 export const getCrossSell = async (req, res) => {
   try {
     const { optionID } = req.query;
-
     const options = Array.isArray(optionID) ? optionID : [optionID];
-    console.log(options);
-    if (options.length < 1) {
+    if (!optionID) {
       const crossSells = await CrossSellModel.find({})
-        .populate("crossSellOption")
-        .populate("option");
+        .populate("option")
+        .populate("crossSellOption");
       return res.status(200).json({
         message: "Cross-sell options retrieved successfully",
         crossSells,
       });
     }
-    console.log("here");
     let crossSells = await CrossSellModel.find({
       option: { $eq: options },
       $expr: { $eq: [{ $size: "$option" }, options.length] },
@@ -142,8 +139,6 @@ export const getCrossSell = async (req, res) => {
 export const addCrossSell = async (req, res) => {
   try {
     const { option, crossSellOption } = req.body;
-    console.log(typeof option);
-    // Create a new CrossSell document
     const crossSell = new CrossSellModel({
       option,
       crossSellOption,
@@ -160,7 +155,31 @@ export const addCrossSell = async (req, res) => {
     res.status(500).json({ message: "An error occurred", error });
   }
 };
+export const updateCrossSell = async (req, res) => {
+  try {
+    console.log("here");
+    const { id } = req.params;
+    const { option, crossSellOption } = req.body;
+    console.log(id);
+    // Find the cross-sell option by ID
+    const crossSell = await CrossSellModel.findById(id);
 
+    // Update the cross-sell option properties
+    crossSell.option = option;
+    crossSell.crossSellOption = crossSellOption;
+
+    // Save the updated document to the database
+    await crossSell.save();
+
+    // Send a success response
+    res
+      .status(200)
+      .json({ message: "Cross-sell option updated successfully", crossSell });
+  } catch (error) {
+    // Send an error response
+    res.status(500).json({ message: "An error occurred", error });
+  }
+};
 /**
  * @swagger
  * /cross-sell/{crossSellId}:
@@ -201,9 +220,9 @@ export const addCrossSell = async (req, res) => {
  */
 export const deleteCrossSell = async (req, res) => {
   try {
-    const { crossSellId } = req.params;
+    const { id } = req.params;
     // Find the cross-sell option by ID and delete it
-    await CrossSellModel.findByIdAndDelete(crossSellId);
+    await CrossSellModel.findByIdAndDelete(id);
     // Send a success response
     res.status(200).json({ message: "Cross-sell option deleted successfully" });
   } catch (error) {
