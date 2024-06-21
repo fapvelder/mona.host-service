@@ -1,20 +1,27 @@
 import { ProductModel } from "../models/product.js";
+
 /**
  * @swagger
  * tags:
- *   name: Products
- *   description: Products management
+ *   name: Product
+ *   description: Product management
  */
 
 /**
  * @swagger
- * /product:
+ * /product-type:
  *   get:
- *     summary: Retrieve a list of products
- *     tags: [Products]
+ *     summary: Retrieve a list of product types
+ *     tags: [Product]
+ *     parameters:
+ *       - in: query
+ *         name: optionName
+ *         schema:
+ *           type: string
+ *         description: The name of the product option to search for
  *     responses:
  *       200:
- *         description: A list of products
+ *         description: A list of product types
  *         content:
  *           application/json:
  *             schema:
@@ -24,42 +31,85 @@ import { ProductModel } from "../models/product.js";
  *                 properties:
  *                   id:
  *                     type: string
- *                   name:
+ *                   product:
  *                     type: string
- *                   createdAt:
+ *                   optionName:
  *                     type: string
- *                     format: date-time
- *                   updatedAt:
- *                     type: string
- *                     format: date-time
+ *                   optionPrice:
+ *                     type: number
+ *                   basePrice:
+ *                     type: number
+ *                   period:
+ *                     type: number
+ *                   discount:
+ *                     type: number
+ *                   upSell:
+ *                     type: boolean
+ *                   information:
+ *                     type: object
+ *                     properties:
+ *                       feature_tooltip:
+ *                         type: string
+ *                       features:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             description:
+ *                               type: string
+ *                             tooltip:
+ *                               type: string
+ *                       securities:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             description:
+ *                               type: string
+ *                             tooltip:
+ *                               type: string
+ *                       services:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             description:
+ *                               type: string
+ *                             tooltip:
+ *                               type: string
+ *                       specifications:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             description:
+ *                               type: string
+ *                             tooltip:
+ *                               type: string
  *       500:
  *         description: Server error
  */
 export const getProducts = async (req, res) => {
   try {
-    const products = await ProductModel.find({}).sort({ createdAt: -1 });
+    const { name } = req.query;
+    const query = name ? { name: { $regex: name, $options: "i" } } : {};
+    const products = await ProductModel.find(query)
+      .sort({
+        createdAt: -1,
+      })
+      .populate("product");
     res.status(200).send(products);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
 };
 
-export const getProductById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    console.log(id);
-    const product = await ProductModel.findById(id);
-    res.status(200).send(product);
-  } catch (err) {
-    res.status(500).send({ message: err.message });
-  }
-};
 /**
  * @swagger
- * /product:
+ * /product-type:
  *   post:
- *     summary: Create a new product
- *     tags: [Products]
+ *     summary: Create a new product option
+ *     tags: [Product]
  *     requestBody:
  *       required: true
  *       content:
@@ -67,12 +117,64 @@ export const getProductById = async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               productID:
  *                 type: string
- *                 example: "Product Name"
+ *               optionName:
+ *                 type: string
+ *               optionPrice:
+ *                 type: number
+ *               basePrice:
+ *                 type: number
+ *               period:
+ *                 type: number
+ *               discount:
+ *                 type: number
+ *               upSell:
+ *                 type: boolean
+ *               information:
+ *                 type: object
+ *                 properties:
+ *                   feature_tooltip:
+ *                      type: string
+ *                   features:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         description:
+ *                           type: string
+ *                         tooltip:
+ *                           type: string
+ *                   securities:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         description:
+ *                           type: string
+ *                         tooltip:
+ *                           type: string
+ *                   services:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         description:
+ *                           type: string
+ *                         tooltip:
+ *                           type: string
+ *                   specifications:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         description:
+ *                           type: string
+ *                         tooltip:
+ *                           type: string
  *     responses:
  *       200:
- *         description: The created product
+ *         description: The created product option
  *         content:
  *           application/json:
  *             schema:
@@ -80,27 +182,81 @@ export const getProductById = async (req, res) => {
  *               properties:
  *                 id:
  *                   type: string
- *                 name:
+ *                 product:
  *                   type: string
- *                 createdAt:
+ *                 optionName:
  *                   type: string
- *                   format: date-time
- *                 updatedAt:
- *                   type: string
- *                   format: date-time
+ *                 optionPrice:
+ *                   type: number
+ *                 basePrice:
+ *                   type: number
+ *                 period:
+ *                   type: number
+ *                 discount:
+ *                   type: number
+ *                 upSell:
+ *                   type: boolean
+ *                 information:
+ *                   type: object
+ *                   properties:
+ *                     features:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           description:
+ *                             type: string
+ *                           tooltip:
+ *                             type: string
+ *                     securities:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           description:
+ *                             type: string
+ *                           tooltip:
+ *                             type: string
+ *                     services:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           description:
+ *                             type: string
+ *                           tooltip:
+ *                             type: string
+ *                     specifications:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           description:
+ *                             type: string
+ *                           tooltip:
+ *                             type: string
  *       500:
  *         description: Server error
  */
-
 export const createProduct = async (req, res, next) => {
   try {
-    const newProduct = {
-      name: req.body.name,
+    const { productData } = req.body;
+    console.log(productData);
+    const newProductDiscount = {
+      product: productData.product,
+      information: {
+        feature_tooltip: productData.featureTooltip,
+        features: productData.features,
+        securities: productData.securities,
+        services: productData.services,
+        specifications: productData.specifications,
+      },
+      ...productData,
     };
-    const product = new ProductModel(newProduct);
-
-    await product.save();
-    res.status(200).json(product);
+    const productDiscount = new ProductModel(newProductDiscount);
+    console.log(productDiscount);
+    await productDiscount.save();
+    res.status(200).json(productDiscount);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -108,17 +264,17 @@ export const createProduct = async (req, res, next) => {
 
 /**
  * @swagger
- * /product/{id}:
+ * /product-type/{id}:
  *   put:
- *     summary: Update a product
- *     tags: [Products]
+ *     summary: Update a product option
+ *     tags: [Product]
  *     parameters:
  *       - in: path
  *         name: id
  *         schema:
  *           type: string
  *         required: true
- *         description: ID of the product to update
+ *         description: The ID of the product option to update
  *     requestBody:
  *       required: true
  *       content:
@@ -126,12 +282,62 @@ export const createProduct = async (req, res, next) => {
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               optionName:
  *                 type: string
- *                 example: "Updated Product Name"
+ *               optionPrice:
+ *                 type: number
+ *               basePrice:
+ *                 type: number
+ *               period:
+ *                 type: number
+ *               discount:
+ *                 type: number
+ *               upSell:
+ *                 type: boolean
+ *               information:
+ *                 type: object
+ *                 properties:
+ *                   feature_tooltip:
+ *                      type: string
+ *                   features:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         description:
+ *                           type: string
+ *                         tooltip:
+ *                           type: string
+ *                   securities:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         description:
+ *                           type: string
+ *                         tooltip:
+ *                           type: string
+ *                   services:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         description:
+ *                           type: string
+ *                         tooltip:
+ *                           type: string
+ *                   specifications:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         description:
+ *                           type: string
+ *                         tooltip:
+ *                           type: string
  *     responses:
  *       200:
- *         description: The updated product
+ *         description: The updated product option
  *         content:
  *           application/json:
  *             schema:
@@ -139,33 +345,83 @@ export const createProduct = async (req, res, next) => {
  *               properties:
  *                 id:
  *                   type: string
- *                 name:
+ *                 product:
  *                   type: string
- *                 createdAt:
+ *                 optionName:
  *                   type: string
- *                   format: date-time
- *                 updatedAt:
- *                   type: string
- *                   format: date-time
- *       404:
- *         description: Product not found
+ *                 optionPrice:
+ *                   type: number
+ *                 basePrice:
+ *                   type: number
+ *                 period:
+ *                   type: number
+ *                 discount:
+ *                   type: number
+ *                 upSell:
+ *                   type: boolean
+ *                 information:
+ *                   type: object
+ *                   properties:
+ *                     features:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           description:
+ *                             type: string
+ *                           tooltip:
+ *                             type: string
+ *                     securities:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           description:
+ *                             type: string
+ *                           tooltip:
+ *                             type: string
+ *                     services:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           description:
+ *                             type: string
+ *                           tooltip:
+ *                             type: string
+ *                     specifications:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           description:
+ *                             type: string
+ *                           tooltip:
+ *                             type: string
  *       500:
  *         description: Server error
  */
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedProduct = {
-      name: req.body.name,
-      updatedAt: new Date(),
-    };
-    const product = await ProductModel.findByIdAndUpdate(id, updatedProduct, {
-      new: true,
-    });
-    if (!product) {
-      return res.status(404).send({ message: "Product not found" });
-    }
-    res.status(200).json(product);
+    const { productData } = req.body;
+    const updatedProduct = await ProductModel.findByIdAndUpdate(
+      id,
+      {
+        product: productData.product,
+        information: {
+          feature_tooltip: productData.featureTooltip,
+          features: productData.features,
+          securities: productData.securities,
+          services: productData.services,
+          specifications: productData.specifications,
+        },
+        ...productData,
+      },
+      { new: true }
+    );
+
+    res.status(200).json(updatedProduct);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -173,34 +429,200 @@ export const updateProduct = async (req, res) => {
 
 /**
  * @swagger
- * /product/{id}:
+ * /product-type/{id}:
  *   delete:
- *     summary: Delete a product
- *     tags: [Products]
+ *     summary: Delete a product option
+ *     tags: [Product]
  *     parameters:
  *       - in: path
  *         name: id
  *         schema:
  *           type: string
  *         required: true
- *         description: ID of the product to delete
+ *         description: The ID of the product option to delete
  *     responses:
- *       204:
- *         description: Product deleted successfully
+ *       200:
+ *         description: The deleted product option
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 product:
+ *                   type: string
+ *                 optionName:
+ *                   type: string
+ *                 optionPrice:
+ *                   type: number
+ *                 basePrice:
+ *                   type: number
+ *                 period:
+ *                   type: number
+ *                 discount:
+ *                   type: number
+ *                 upSell:
+ *                   type: boolean
+ *                 information:
+ *                   type: object
+ *                   properties:
+ *                     features:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           description:
+ *                             type: string
+ *                           tooltip:
+ *                             type: string
+ *                     securities:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           description:
+ *                             type: string
+ *                           tooltip:
+ *                             type: string
+ *                     services:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           description:
+ *                             type: string
+ *                           tooltip:
+ *                             type: string
+ *                     specifications:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           description:
+ *                             type: string
+ *                           tooltip:
+ *                             type: string
  *       404:
- *         description: Product not found
+ *         description: Product Option not found
  *       500:
  *         description: Server error
  */
 export const deleteProduct = async (req, res) => {
   try {
-    console.log("deleteProduct");
     const { id } = req.params;
-    const product = await ProductModel.findByIdAndDelete(id);
-    if (!product) {
+    const deletedProduct = await ProductModel.findByIdAndDelete(id);
+    if (!deletedProduct) {
+      return res.status(404).send({ message: "Product Option not found" });
+    }
+    res.status(200).json(deletedProduct);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
+/**
+ * @swagger
+ * /product-type/up-sell:
+ *   get:
+ *     summary: Get up-sell products
+ *     tags: [Product]
+ *     parameters:
+ *       - in: query
+ *         name: optionID
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the product option
+ *     responses:
+ *       200:
+ *         description: The up-sell products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   product:
+ *                     type: string
+ *                   optionName:
+ *                     type: string
+ *                   optionPrice:
+ *                     type: number
+ *                   basePrice:
+ *                     type: number
+ *                   period:
+ *                     type: number
+ *                   discount:
+ *                     type: number
+ *                   upSell:
+ *                     type: boolean
+ *                   information:
+ *                     type: object
+ *                     properties:
+ *                       features:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             description:
+ *                               type: string
+ *                             tooltip:
+ *                               type: string
+ *                       securities:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             description:
+ *                               type: string
+ *                             tooltip:
+ *                               type: string
+ *                       services:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             description:
+ *                               type: string
+ *                             tooltip:
+ *                               type: string
+ *                       specifications:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             description:
+ *                               type: string
+ *                             tooltip:
+ *                               type: string
+ *       204:
+ *         description: No up-sell products
+ *       404:
+ *         description: Invalid option ID
+ *       500:
+ *         description: Server error
+ */
+export const upSell = async (req, res) => {
+  try {
+    const { optionID } = req.query;
+    if (!optionID) {
+      return res.status(404).send({ message: "Invalid option ID" });
+    }
+    const productType = await ProductModel.findById(optionID);
+    if (!productType) {
       return res.status(404).send({ message: "Product not found" });
     }
-    res.status(200).send({ message: "Product successfully deleted" });
+    const upsellProducts = await ProductModel.find({
+      name: productType.name,
+    }).select("-information -upSell");
+    if (upsellProducts) {
+      return res.status(200).send(upsellProducts);
+    }
+    return res.status(204).send({ message: "No up-sell products" });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }

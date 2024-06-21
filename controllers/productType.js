@@ -1,27 +1,20 @@
 import { ProductTypeModel } from "../models/productType.js";
-
 /**
  * @swagger
  * tags:
- *   name: ProductType
- *   description: Product types management
+ *   name: ProductTypes
+ *   description: ProductTypes management
  */
 
 /**
  * @swagger
- * /product-type:
+ * /product:
  *   get:
- *     summary: Retrieve a list of product types
- *     tags: [ProductType]
- *     parameters:
- *       - in: query
- *         name: optionName
- *         schema:
- *           type: string
- *         description: The name of the product option to search for
+ *     summary: Retrieve a list of products
+ *     tags: [ProductTypes]
  *     responses:
  *       200:
- *         description: A list of product types
+ *         description: A list of products
  *         content:
  *           application/json:
  *             schema:
@@ -31,85 +24,42 @@ import { ProductTypeModel } from "../models/productType.js";
  *                 properties:
  *                   id:
  *                     type: string
- *                   product:
+ *                   name:
  *                     type: string
- *                   optionName:
+ *                   createdAt:
  *                     type: string
- *                   optionPrice:
- *                     type: number
- *                   basePrice:
- *                     type: number
- *                   period:
- *                     type: number
- *                   discount:
- *                     type: number
- *                   upSell:
- *                     type: boolean
- *                   information:
- *                     type: object
- *                     properties:
- *                       feature_tooltip:
- *                         type: string
- *                       features:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             description:
- *                               type: string
- *                             tooltip:
- *                               type: string
- *                       securities:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             description:
- *                               type: string
- *                             tooltip:
- *                               type: string
- *                       services:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             description:
- *                               type: string
- *                             tooltip:
- *                               type: string
- *                       specifications:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             description:
- *                               type: string
- *                             tooltip:
- *                               type: string
+ *                     format: date-time
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
  *       500:
  *         description: Server error
  */
 export const getProductTypes = async (req, res) => {
   try {
-    const { name } = req.query;
-    const query = name ? { name: { $regex: name, $options: "i" } } : {};
-    const products = await ProductTypeModel.find(query)
-      .sort({
-        createdAt: -1,
-      })
-      .populate("product");
+    const products = await ProductTypeModel.find({}).sort({ createdAt: -1 });
     res.status(200).send(products);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
 };
 
+export const getProductTypeById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(id);
+    const product = await ProductTypeModel.findById(id);
+    res.status(200).send(product);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
 /**
  * @swagger
- * /product-type:
+ * /product:
  *   post:
- *     summary: Create a new product option
- *     tags: [ProductType]
+ *     summary: Create a new product
+ *     tags: [ProductTypes]
  *     requestBody:
  *       required: true
  *       content:
@@ -117,64 +67,12 @@ export const getProductTypes = async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               productID:
+ *               name:
  *                 type: string
- *               optionName:
- *                 type: string
- *               optionPrice:
- *                 type: number
- *               basePrice:
- *                 type: number
- *               period:
- *                 type: number
- *               discount:
- *                 type: number
- *               upSell:
- *                 type: boolean
- *               information:
- *                 type: object
- *                 properties:
- *                   feature_tooltip:
- *                      type: string
- *                   features:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         description:
- *                           type: string
- *                         tooltip:
- *                           type: string
- *                   securities:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         description:
- *                           type: string
- *                         tooltip:
- *                           type: string
- *                   services:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         description:
- *                           type: string
- *                         tooltip:
- *                           type: string
- *                   specifications:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         description:
- *                           type: string
- *                         tooltip:
- *                           type: string
+ *                 example: "ProductType Name"
  *     responses:
  *       200:
- *         description: The created product option
+ *         description: The created product
  *         content:
  *           application/json:
  *             schema:
@@ -182,81 +80,27 @@ export const getProductTypes = async (req, res) => {
  *               properties:
  *                 id:
  *                   type: string
- *                 product:
+ *                 name:
  *                   type: string
- *                 optionName:
+ *                 createdAt:
  *                   type: string
- *                 optionPrice:
- *                   type: number
- *                 basePrice:
- *                   type: number
- *                 period:
- *                   type: number
- *                 discount:
- *                   type: number
- *                 upSell:
- *                   type: boolean
- *                 information:
- *                   type: object
- *                   properties:
- *                     features:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *                     securities:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *                     services:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *                     specifications:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
+ *                   format: date-time
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
  *       500:
  *         description: Server error
  */
+
 export const createProductType = async (req, res, next) => {
   try {
-    const { productData } = req.body;
-    console.log(productData);
-    const newProductDiscount = {
-      product: productData.product,
-      information: {
-        feature_tooltip: productData.featureTooltip,
-        features: productData.features,
-        securities: productData.securities,
-        services: productData.services,
-        specifications: productData.specifications,
-      },
-      ...productData,
+    const newProductType = {
+      name: req.body.name,
     };
-    const productDiscount = new ProductTypeModel(newProductDiscount);
-    console.log(productDiscount);
-    await productDiscount.save();
-    res.status(200).json(productDiscount);
+    const product = new ProductTypeModel(newProductType);
+
+    await product.save();
+    res.status(200).json(product);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -264,17 +108,17 @@ export const createProductType = async (req, res, next) => {
 
 /**
  * @swagger
- * /product-type/{id}:
+ * /product/{id}:
  *   put:
- *     summary: Update a product option
- *     tags: [ProductType]
+ *     summary: Update a product
+ *     tags: [ProductTypes]
  *     parameters:
  *       - in: path
  *         name: id
  *         schema:
  *           type: string
  *         required: true
- *         description: The ID of the product option to update
+ *         description: ID of the product to update
  *     requestBody:
  *       required: true
  *       content:
@@ -282,62 +126,12 @@ export const createProductType = async (req, res, next) => {
  *           schema:
  *             type: object
  *             properties:
- *               optionName:
+ *               name:
  *                 type: string
- *               optionPrice:
- *                 type: number
- *               basePrice:
- *                 type: number
- *               period:
- *                 type: number
- *               discount:
- *                 type: number
- *               upSell:
- *                 type: boolean
- *               information:
- *                 type: object
- *                 properties:
- *                   feature_tooltip:
- *                      type: string
- *                   features:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         description:
- *                           type: string
- *                         tooltip:
- *                           type: string
- *                   securities:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         description:
- *                           type: string
- *                         tooltip:
- *                           type: string
- *                   services:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         description:
- *                           type: string
- *                         tooltip:
- *                           type: string
- *                   specifications:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         description:
- *                           type: string
- *                         tooltip:
- *                           type: string
+ *                 example: "Updated ProductType Name"
  *     responses:
  *       200:
- *         description: The updated product option
+ *         description: The updated product
  *         content:
  *           application/json:
  *             schema:
@@ -345,83 +139,37 @@ export const createProductType = async (req, res, next) => {
  *               properties:
  *                 id:
  *                   type: string
- *                 product:
+ *                 name:
  *                   type: string
- *                 optionName:
+ *                 createdAt:
  *                   type: string
- *                 optionPrice:
- *                   type: number
- *                 basePrice:
- *                   type: number
- *                 period:
- *                   type: number
- *                 discount:
- *                   type: number
- *                 upSell:
- *                   type: boolean
- *                 information:
- *                   type: object
- *                   properties:
- *                     features:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *                     securities:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *                     services:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *                     specifications:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
+ *                   format: date-time
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *       404:
+ *         description: ProductType not found
  *       500:
  *         description: Server error
  */
 export const updateProductType = async (req, res) => {
   try {
     const { id } = req.params;
-    const { productData } = req.body;
-    const updatedProductType = await ProductTypeModel.findByIdAndUpdate(
+    const updatedProductType = {
+      name: req.body.name,
+      updatedAt: new Date(),
+    };
+    const product = await ProductTypeModel.findByIdAndUpdate(
       id,
+      updatedProductType,
       {
-        product: productData.product,
-        information: {
-          feature_tooltip: productData.featureTooltip,
-          features: productData.features,
-          securities: productData.securities,
-          services: productData.services,
-          specifications: productData.specifications,
-        },
-        ...productData,
-      },
-      { new: true }
+        new: true,
+      }
     );
-
-    res.status(200).json(updatedProductType);
+    if (!product) {
+      return res.status(404).send({ message: "ProductType not found" });
+    }
+    res.status(200).json(product);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -429,200 +177,34 @@ export const updateProductType = async (req, res) => {
 
 /**
  * @swagger
- * /product-type/{id}:
+ * /product/{id}:
  *   delete:
- *     summary: Delete a product option
- *     tags: [ProductType]
+ *     summary: Delete a product
+ *     tags: [ProductTypes]
  *     parameters:
  *       - in: path
  *         name: id
  *         schema:
  *           type: string
  *         required: true
- *         description: The ID of the product option to delete
+ *         description: ID of the product to delete
  *     responses:
- *       200:
- *         description: The deleted product option
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                 product:
- *                   type: string
- *                 optionName:
- *                   type: string
- *                 optionPrice:
- *                   type: number
- *                 basePrice:
- *                   type: number
- *                 period:
- *                   type: number
- *                 discount:
- *                   type: number
- *                 upSell:
- *                   type: boolean
- *                 information:
- *                   type: object
- *                   properties:
- *                     features:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *                     securities:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *                     services:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *                     specifications:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
+ *       204:
+ *         description: ProductType deleted successfully
  *       404:
- *         description: Product Option not found
+ *         description: ProductType not found
  *       500:
  *         description: Server error
  */
 export const deleteProductType = async (req, res) => {
   try {
+    console.log("deleteProductType");
     const { id } = req.params;
-    const deletedProductType = await ProductTypeModel.findByIdAndDelete(id);
-    if (!deletedProductType) {
-      return res.status(404).send({ message: "Product Option not found" });
+    const product = await ProductTypeModel.findByIdAndDelete(id);
+    if (!product) {
+      return res.status(404).send({ message: "ProductType not found" });
     }
-    res.status(200).json(deletedProductType);
-  } catch (err) {
-    res.status(500).send({ message: err.message });
-  }
-};
-
-/**
- * @swagger
- * /product-type/up-sell:
- *   get:
- *     summary: Get up-sell products
- *     tags: [ProductType]
- *     parameters:
- *       - in: query
- *         name: optionID
- *         schema:
- *           type: string
- *         required: true
- *         description: The ID of the product option
- *     responses:
- *       200:
- *         description: The up-sell products
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                   product:
- *                     type: string
- *                   optionName:
- *                     type: string
- *                   optionPrice:
- *                     type: number
- *                   basePrice:
- *                     type: number
- *                   period:
- *                     type: number
- *                   discount:
- *                     type: number
- *                   upSell:
- *                     type: boolean
- *                   information:
- *                     type: object
- *                     properties:
- *                       features:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             description:
- *                               type: string
- *                             tooltip:
- *                               type: string
- *                       securities:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             description:
- *                               type: string
- *                             tooltip:
- *                               type: string
- *                       services:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             description:
- *                               type: string
- *                             tooltip:
- *                               type: string
- *                       specifications:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             description:
- *                               type: string
- *                             tooltip:
- *                               type: string
- *       204:
- *         description: No up-sell products
- *       404:
- *         description: Invalid option ID
- *       500:
- *         description: Server error
- */
-export const upSell = async (req, res) => {
-  try {
-    const { optionID } = req.query;
-    if (!optionID) {
-      return res.status(404).send({ message: "Invalid option ID" });
-    }
-    const productType = await ProductTypeModel.findById(optionID);
-    if (!productType) {
-      return res.status(404).send({ message: "Product type not found" });
-    }
-    const upsellProducts = await ProductTypeModel.find({
-      name: productType.name,
-    }).select("-information -upSell");
-    if (upsellProducts) {
-      return res.status(200).send(upsellProducts);
-    }
-    return res.status(204).send({ message: "No up-sell products" });
+    res.status(200).send({ message: "ProductType successfully deleted" });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
