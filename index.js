@@ -25,7 +25,6 @@ const allowOrigin = [
   process.env.NGROK,
   "*",
 ];
-console.log(process.env.IP);
 const corsOptions = {
   credentials: true,
   origin: "*",
