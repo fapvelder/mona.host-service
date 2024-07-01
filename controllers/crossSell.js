@@ -64,12 +64,14 @@ export const getCrossSell = async (req, res) => {
         crossSells,
       });
     }
+
     let crossSells = await CrossSellModel.find({
       option: { $eq: options },
       $expr: { $eq: [{ $size: "$option" }, options.length] },
     })
       .populate("crossSellOption")
       .populate("option");
+    console.log("in option");
 
     crossSells = crossSells.map((crossSell) => {
       crossSell.crossSellOption = crossSell.crossSellOption.filter(
@@ -138,10 +140,12 @@ export const getCrossSell = async (req, res) => {
  */
 export const addCrossSell = async (req, res) => {
   try {
-    const { option, crossSellOption } = req.body;
+    const { option, crossSellOption, isUpSell, discount } = req.body;
     const crossSell = new CrossSellModel({
       option,
       crossSellOption,
+      isUpSell,
+      discount,
     });
     // Save the document to the database
     await crossSell.save();
@@ -157,24 +161,23 @@ export const addCrossSell = async (req, res) => {
 };
 export const updateCrossSell = async (req, res) => {
   try {
-    console.log("here");
     const { id } = req.params;
-    const { option, crossSellOption } = req.body;
-    console.log(id);
+    const { option, crossSellOption, isUpSell, discount } = req.body;
     // Find the cross-sell option by ID
-    const crossSell = await CrossSellModel.findById(id);
+    const crossSell = await CrossSellModel.findByIdAndUpdate(
+      id,
+      {
+        option,
+        crossSellOption,
+        isUpSell,
+        discount,
+      },
+      { new: true }
+    );
 
     // Update the cross-sell option properties
-    crossSell.option = option;
-    crossSell.crossSellOption = crossSellOption;
-
     // Save the updated document to the database
-    await crossSell.save();
-
-    // Send a success response
-    res
-      .status(200)
-      .json({ message: "Cross-sell option updated successfully", crossSell });
+    res.status(200).json(crossSell);
   } catch (error) {
     // Send an error response
     res.status(500).json({ message: "An error occurred", error });

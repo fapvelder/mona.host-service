@@ -9,6 +9,12 @@ const crossSellSchema = new mongoose.Schema(
         ref: "Product",
       },
     ],
+    isUpSell: {
+      type: Boolean,
+    },
+    discount: {
+      type: Number,
+    },
   },
   { timestamps: true }
 );
