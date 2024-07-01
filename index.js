@@ -8,9 +8,9 @@ import user from "./routers/user.js";
 import product from "./routers/product.js";
 import productType from "./routers/productType.js";
 import crossSell from "./routers/crossSell.js";
+import coupon from "./routers/coupon.js";
 import dotenv from "dotenv";
 import setupSwagger from "./swagger.js";
-
 dotenv.config();
 
 export const app = express();
@@ -69,3 +69,4 @@ app.use("/user", user);
 app.use("/product", product);
 app.use("/product-type", productType);
 app.use("/cross-sell", crossSell);
+app.use("/coupon", coupon);
