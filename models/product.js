@@ -1,48 +1,84 @@
 import mongoose from "mongoose";
 
-const productSchema = new mongoose.Schema(
+const requiredProductSchema = new mongoose.Schema(
   {
     product: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ProductType",
+      ref: "Product",
       required: true,
     },
-    name: {
+    packageName: {
       type: String,
-      required: true,
-    },
-    optimizeDescription: {
-      type: String,
-    },
-    renewalCostDescription: {
-      type: String,
-    },
-    bonusPeriod: {
-      type: String,
-    },
-    salePrice: {
-      type: Number,
-    },
-    basePrice: {
-      type: Number,
-    },
-    pricePerMonth: {
-      type: Number,
+      required: false,
     },
     period: {
       type: Number,
+      required: false,
+    },
+  },
+  { _id: false }
+);
+const crossSellProductSchema = new mongoose.Schema(
+  {
+    ...requiredProductSchema.obj,
+    discountCrossSell: {
+      type: Number,
+      required: false,
+    },
+  },
+  { _id: false }
+);
+const crossSellSchema = new mongoose.Schema(
+  {
+    requiredProduct: {
+      type: [requiredProductSchema],
+      required: false,
+    },
+    crossSellProduct: {
+      type: [crossSellProductSchema],
       required: true,
     },
-    discount: {
-      type: Number,
-    },
-    bestChoice: {
-      type: Boolean,
-      default: false,
-    },
-    popular: {
-      type: Boolean,
-      default: false,
+  },
+  { _id: false }
+);
+
+const periodSchema = new mongoose.Schema({
+  optimizeDescription: {
+    type: String,
+  },
+  renewalCostDescription: {
+    type: String,
+  },
+  bonusPeriod: {
+    type: String,
+  },
+  months: {
+    type: Number,
+    required: true,
+  },
+  salePrice: {
+    type: Number,
+  },
+  basePrice: {
+    type: Number,
+  },
+  discount: {
+    type: Number,
+  },
+  bestChoice: {
+    type: Boolean,
+    default: false,
+  },
+  popular: {
+    type: Boolean,
+    default: false,
+  },
+});
+const packagesSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
     },
     information: {
       feature_tooltip: { type: String },
@@ -87,6 +123,28 @@ const productSchema = new mongoose.Schema(
         },
       ],
     },
+    period: [periodSchema],
+  },
+  { _id: false }
+);
+
+const productSchema = new mongoose.Schema(
+  {
+    productType: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ProductType",
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    os: {
+      type: String,
+      enum: ["Window", "Linux"],
+    },
+    packages: [packagesSchema],
+    crossSells: [crossSellSchema],
   },
   { timestamps: true }
 );
