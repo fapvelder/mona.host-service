@@ -1,5 +1,7 @@
 import { ProductModel } from "../models/product.js";
 import mongoose from "mongoose";
+import { checkCoupon } from "./coupon.js";
+import axios from "axios";
 /**
  * @swagger
  * tags:
@@ -89,10 +91,106 @@ import mongoose from "mongoose";
  *       500:
  *         description: Server error
  */
+export const getProductsByIds = async (req, res) => {
+  try {
+    const productsInfo = req.body.products; // Assuming the array of objects is passed in the request body
+    if (!Array.isArray(productsInfo)) {
+      return res
+        .status(400)
+        .send({ message: "Input should be an array of objects" });
+    }
+
+    const ids = productsInfo.map((product) => product.id);
+
+    const products = await ProductModel.find({ _id: { $in: ids } })
+      .populate("productType", "name")
+      .populate({
+        path: "crossSells.requiredProduct.product",
+        model: "Product",
+        populate: [
+          {
+            path: "productType",
+            model: "ProductType",
+            select: "name",
+          },
+        ],
+      })
+      .populate({
+        path: "crossSells.crossSellProduct.product",
+        model: "Product",
+        populate: [
+          {
+            path: "productType",
+            model: "ProductType",
+            select: "name",
+          },
+        ],
+      });
+    if (products.length === 0) {
+      return res.status(404).send({ message: "Products not found" });
+    }
+
+    const enhancedProducts = products.map((product) => {
+      const plainProduct = product.toObject(); // Convert to plain object
+      const additionalFields = productsInfo.find(
+        (p) => p.id === product._id.toString()
+      );
+      if (additionalFields) {
+        plainProduct.packageName = additionalFields.packageName;
+        plainProduct.period = additionalFields.period;
+      }
+
+      return plainProduct;
+    });
+
+    return res.status(200).send(enhancedProducts);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
 export const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await ProductModel.findById(id);
+    const product = await ProductModel.findById(id)
+      .populate("productType", "name")
+      .populate({
+        path: "crossSells.requiredProduct.product",
+        model: "Product",
+        populate: [
+          {
+            path: "productType",
+            model: "ProductType",
+            select: "name",
+          },
+          // {
+          //   path: "crossSells.requiredProduct.product",
+          //   model: "Product",
+          // },
+          // {
+          //   path: "crossSells.crossSellProduct.product",
+          //   model: "Product",
+          // },
+        ],
+      })
+      .populate({
+        path: "crossSells.crossSellProduct.product",
+        model: "Product",
+        populate: [
+          {
+            path: "productType",
+            model: "ProductType",
+            select: "name",
+          },
+          // {
+          //   path: "crossSells.requiredProduct.product",
+          //   model: "Product",
+          // },
+          // {
+          //   path: "crossSells.crossSellProduct.product",
+          //   model: "Product",
+          // },
+        ],
+      });
     if (!product) {
       return res.status(404).send({ message: "Product not found" });
     }
@@ -101,6 +199,73 @@ export const getProductById = async (req, res) => {
     res.status(500).send({ message: err.message });
   }
 };
+export const getProductsWithAdditionalFields = async (req, res) => {
+  try {
+    const productsInfo = req.body.products;
+    if (!Array.isArray(productsInfo)) {
+      return res
+        .status(400)
+        .send({ message: "Input should be an array of objects" });
+    }
+
+    const ids = productsInfo.map((product) => product.id);
+
+    const products = await ProductModel.find({ _id: { $in: ids } })
+      .populate("productType", "name")
+      .select("-crossSells -crossSellDescription -packages.information");
+
+    if (products.length === 0) {
+      return res.status(404).send({ message: "Products not found" });
+    }
+
+    const enhancedProducts = products.map((product) => {
+      const plainProduct = product.toObject(); // Convert to plain object
+      const additionalFields = productsInfo.find(
+        (p) => p.id === product._id.toString()
+      );
+      if (additionalFields) {
+        plainProduct.packageName = additionalFields.packageName;
+        plainProduct.period = additionalFields.period;
+        // Calculate totalSalePrice and totalBasePrice
+        const selectedPackage = plainProduct.packages.find(
+          (pkg) => pkg.name === additionalFields.packageName
+        );
+        if (selectedPackage) {
+          const selectedPeriod = selectedPackage.period.find(
+            (p) => p.months === additionalFields.period
+          );
+          plainProduct.salePrice = selectedPeriod
+            ? selectedPeriod.salePrice
+            : 0;
+          plainProduct.basePrice = selectedPeriod
+            ? selectedPeriod.basePrice
+            : 0;
+        } else {
+          plainProduct.salePrice = 0;
+          plainProduct.basePrice = 0;
+        }
+      }
+
+      return plainProduct;
+    });
+    const filteredProducts = enhancedProducts
+      .filter((p) => p.name !== "Domain")
+      .map((product) => {
+        return {
+          id: product._id,
+          name: product.name + " " + product.packageName,
+          packageName: product.packageName,
+          period: product.period,
+          basePrice: product.basePrice,
+          os: product.os,
+        };
+      });
+    return res.status(200).send(filteredProducts);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
 export const getProducts = async (req, res) => {
   try {
     const { name } = req.query;
@@ -113,25 +278,345 @@ export const getProducts = async (req, res) => {
       .populate({
         path: "crossSells.requiredProduct.product",
         model: "Product",
-        populate: {
-          path: "productType",
-          model: "ProductType",
-          select: "name",
-        },
+        select: "-packages.information",
+        populate: [
+          {
+            path: "productType",
+            model: "ProductType",
+            select: "name",
+          },
+          {
+            path: "crossSells.requiredProduct.product",
+            model: "Product",
+            select: "-packages.information",
+          },
+          {
+            path: "crossSells.crossSellProduct.product",
+            model: "Product",
+            select: "-packages.information",
+          },
+        ],
       })
       .populate({
         path: "crossSells.crossSellProduct.product",
         model: "Product",
-        populate: {
-          path: "productType",
-          model: "ProductType",
-          select: "name",
-        },
+        select: "-packages.information",
+        populate: [
+          {
+            path: "productType",
+            model: "ProductType",
+            select: "name",
+          },
+          {
+            path: "crossSells.requiredProduct.product",
+            model: "Product",
+            select: "-packages.information",
+          },
+          {
+            path: "crossSells.crossSellProduct.product",
+            model: "Product",
+            select: "-packages.information",
+          },
+        ],
       });
+
     res.status(200).send(products);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
+};
+const checkDomain = async (req, res, domain) => {
+  // try {
+  const { data } = await axios.get(
+    `${process.env.HOST_URL}/domains/check/available?domains=${domain}`,
+    {
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Key: process.env.HOST_KEY,
+      },
+    }
+  );
+  return data;
+  // } catch (err) {
+  //   return res.status(500).send({ message: err.message });
+  // }
+};
+export const calculateTotalPrice = async (req, res) => {
+  try {
+    const { products, domains, coupon } = req.body;
+
+    const productIds = products.map((p) => p.id);
+    const fetchedProducts = await ProductModel.find({
+      _id: { $in: productIds },
+    })
+      .populate("productType", "name")
+      .populate({
+        path: "crossSells.requiredProduct.product",
+        model: "Product",
+        populate: [
+          {
+            path: "productType",
+            model: "ProductType",
+            select: "name",
+          },
+          {
+            path: "crossSells.requiredProduct.product",
+            model: "Product",
+          },
+          {
+            path: "crossSells.crossSellProduct.product",
+            model: "Product",
+          },
+        ],
+      })
+      .populate({
+        path: "crossSells.crossSellProduct.product",
+        model: "Product",
+        populate: [
+          {
+            path: "productType",
+            model: "ProductType",
+            select: "name",
+          },
+          {
+            path: "crossSells.requiredProduct.product",
+            model: "Product",
+          },
+          {
+            path: "crossSells.crossSellProduct.product",
+            model: "Product",
+          },
+        ],
+      });
+    // Calculate total price
+    let totalPrice = 0;
+    let totalBasePrice = 0;
+    let totalSalePrice = 0;
+    let totalSale = 0;
+    let itemSale = [];
+    let totalBasePriceWithoutDomain = 0;
+    let totalSalePriceWithoutDomain = 0;
+    const calculateDiscount = async () => {
+      const promises = [];
+      if (domains && domains.length > 0) {
+        const domainPromises = domains.map(async (domain) => {
+          const data = await checkDomain(req, res, domain.name);
+          if (data) {
+            const domainPrice = data.results[0].buy_price * domain.year;
+            totalBasePrice += domainPrice;
+            totalPrice += domainPrice;
+          }
+        });
+        promises.push(...domainPromises);
+      }
+
+      products.map((product) => {
+        const productFromDB = fetchedProducts.find(
+          (p) => p._id.toString() === product.id
+        );
+        if (productFromDB) {
+          productFromDB.packages.forEach((pkg) => {
+            if (pkg.name === product.packageName) {
+              const period = pkg.period.find(
+                (p) => p.months === product.period
+              );
+              if (period) {
+                totalPrice += period.salePrice;
+                totalBasePrice += period.basePrice;
+                totalSalePrice += period.salePrice;
+                totalBasePriceWithoutDomain += period.basePrice;
+                totalSalePriceWithoutDomain += period.salePrice;
+              }
+            }
+          });
+        }
+
+        // Fetch products === cart items
+        fetchedProducts.map((fetchProd) =>
+          fetchProd.crossSells.map((crossSell) =>
+            crossSell.crossSellProduct.map((crossProd) =>
+              crossSell.requiredProduct.map((reqProd) => {
+                const haveRequiredProductInCart = products.some(
+                  (p) => p.id.toString() === reqProd.product._id.toString()
+                );
+                const haveSpecificProductInCart = products.some(
+                  (p) =>
+                    p.id.toString() === reqProd.product._id.toString() &&
+                    p.period === reqProd.period
+                );
+
+                if (
+                  haveSpecificProductInCart &&
+                  product.period === reqProd.period &&
+                  product.packageName === crossProd.packageName &&
+                  crossProd.product._id.toString() === product.id.toString()
+                ) {
+                  // No operation needed
+                  const promise = getSalePrice(
+                    product.id,
+                    product.packageName,
+                    product.period
+                  ).then((price) => {
+                    const discount = (crossProd.discountCrossSell || 0) / 100;
+                    // totalPrice -= price * discount;
+                    // console.log("total inside", totalPrice);
+
+                    itemSale.push({
+                      _id: product.id,
+                      name: crossProd.product.name,
+                      packageName: product.packageName,
+                      period: product.period,
+                      discount: price * discount,
+                      percentage: crossProd.discountCrossSell,
+                    });
+                  });
+                  promises.push(promise);
+                } else if (
+                  haveRequiredProductInCart &&
+                  !reqProd.period &&
+                  crossProd.product._id.toString() === product.id.toString()
+                ) {
+                  const promise = getSalePrice(
+                    product.id,
+                    product.packageName,
+                    product.period
+                  ).then((price) => {
+                    const discount = (crossProd.discountCrossSell || 0) / 100;
+                    // totalPrice -= price * discount;
+                    itemSale.push({
+                      _id: product.id,
+                      name: crossProd.product.name,
+                      packageName: product.packageName,
+                      period: product.period,
+                      discount: price * discount,
+                      percentage: crossProd.discountCrossSell,
+                    });
+                  });
+                  promises.push(promise);
+                }
+              })
+            )
+          )
+        );
+      });
+
+      await Promise.all(promises);
+      const item = filterPackages(itemSale);
+      if (item.length > 0) {
+        item.forEach((i) => {
+          totalPrice -= i.discount;
+          totalSale += i.discount;
+        });
+      }
+      return totalPrice;
+    };
+
+    totalPrice = await calculateDiscount();
+
+    const saleByProduct =
+      totalBasePriceWithoutDomain - totalSalePriceWithoutDomain;
+    console.log("saleByProduct", totalBasePriceWithoutDomain);
+    const item = filterPackages(itemSale);
+    let promoSale = 0;
+    let promoMessage = "You do not apply any coupon";
+    const statusReject = "00";
+    const statusAccept = "01";
+    const statusDoesNotApply = "02";
+    let promo;
+    let promoStatus = statusDoesNotApply;
+    if (coupon) {
+      const couponInfo = await checkCoupon(
+        req,
+        res,
+        coupon,
+        products,
+        totalPrice
+      );
+      promo = couponInfo.coupon;
+      if (couponInfo.status === statusAccept) {
+        if (promo.type === "fixed") {
+          promoSale = promo.amount;
+        }
+        if (promo.type === "percentage") {
+          console.log(promo.minTotalPrice);
+          const maxDiscount = promo.maxDiscount;
+          if (promo.maxDiscount > 0) {
+            const discount = totalPrice * (promo.amount / 100);
+            const roundedNumber = Math.round(discount / 1000) * 1000;
+            promoSale =
+              roundedNumber > maxDiscount ? maxDiscount : roundedNumber;
+          }
+        }
+        promoMessage = couponInfo.message;
+        promoStatus = statusAccept;
+      } else if (couponInfo.status === statusReject) {
+        promoMessage = couponInfo.message;
+        promoStatus = statusReject;
+      }
+    }
+    if (promoSale > 0) {
+      totalPrice -= promoSale;
+    }
+    const VAT = (totalPrice * 10) / 100;
+    const totalPriceIncludedVAT = totalPrice + VAT;
+    const totalSaleWithoutPromo = saleByProduct + totalSale;
+    if (req.originalUrl === "/product/calculate") {
+      res.status(200).send({
+        totalBasePrice: totalBasePrice,
+        totalSalePrice: totalSalePrice,
+        totalSaleByProduct: saleByProduct,
+        totalSaleWithoutPromo: totalSaleWithoutPromo,
+        totalSaleSubtractByCrossSale: totalSale,
+        totalPriceAfterCrossSaleAndPromo: totalPrice,
+        totalPriceIncludedVAT: totalPriceIncludedVAT,
+        promoSale: promoSale,
+        promoMessage: promoMessage,
+        promoStatus: promoStatus,
+        VAT: VAT,
+        itemSale: item,
+        coupon: promo,
+      });
+    } else {
+      return {
+        totalBasePrice: totalBasePrice,
+        totalSalePrice: totalSalePrice,
+        totalSaleByProduct: saleByProduct,
+        totalSaleWithoutPromo: totalSaleWithoutPromo,
+        totalSaleSubtractByCrossSale: totalSale,
+        totalPriceAfterCrossSaleAndPromo: totalPrice,
+        totalPriceIncludedVAT: totalPriceIncludedVAT,
+        promoSale: promoSale,
+        promoMessage: promoMessage,
+        promoStatus: promoStatus,
+        VAT: VAT,
+        itemSale: item,
+        coupon: promo,
+      };
+    }
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+const filterPackages = (packages) => {
+  const packageMap = {};
+
+  packages.forEach((pkg) => {
+    const key = `${pkg.name}-${pkg.packageName}-${pkg.period}`;
+
+    if (!packageMap[key] || packageMap[key].discount < pkg.discount) {
+      packageMap[key] = pkg;
+    }
+  });
+
+  return Object.values(packageMap);
+};
+
+const getSalePrice = async (ID, packageName, period) => {
+  const product = await ProductModel.findById(ID);
+  const thisPackage = product.packages.find((pkg) => pkg.name === packageName);
+  const price = thisPackage.period.find((pr) => pr.months === period).salePrice;
+  return price;
 };
 export const getVPS = async (req, res) => {
   try {
@@ -411,6 +896,31 @@ export const getSameProducts = async (req, res) => {
       return res.status(404).send({ message: "Product not found" });
     }
     res.status(200).send(products);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
+export const createOrder = async (req, res) => {
+  try {
+    const data = await calculateTotalPrice(req, res);
+    const { domains, products } = req.body;
+    const { totalPriceIncludedVAT, VAT } = data;
+    const order = {
+      client_id: "66852d5d96579f2534c159e2",
+      amount: totalPriceIncludedVAT,
+      override_amount: 1000,
+      vat_amount: VAT,
+      tax_rate: 0.1,
+      payment_method: "transfer",
+      promotion_id: null,
+      notes: {
+        products: products,
+        domains: domains,
+      },
+      order_items: [],
+    };
+    res.status(200).send(data);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
