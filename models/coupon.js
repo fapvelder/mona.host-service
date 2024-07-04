@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { requiredProductSchema } from "./product.js";
 
 const couponSchema = new mongoose.Schema(
   {
@@ -20,6 +21,10 @@ const couponSchema = new mongoose.Schema(
       enum: ["specific", "all"],
       required: true,
     },
+    description: {
+      type: String,
+      required: false,
+    },
     maxDiscount: {
       Number,
     },
@@ -37,25 +42,16 @@ const couponSchema = new mongoose.Schema(
     userUsageLimit: {
       type: Number,
     },
-    specificProducts: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
-        required: () => {
-          return this.applyFor === "specific";
-        },
-      },
-    ],
+    specificProducts: [requiredProductSchema],
     allowedEmails: {
       type: [String],
       default: [],
     },
-    requiredProducts: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
-      },
-    ],
+    isForAll: {
+      type: Boolean,
+      default: false,
+    },
+    requiredProducts: [requiredProductSchema],
   },
   { timestamps: true }
 );
