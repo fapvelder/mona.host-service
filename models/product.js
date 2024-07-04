@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const requiredProductSchema = new mongoose.Schema(
+export const requiredProductSchema = new mongoose.Schema(
   {
     product: {
       type: mongoose.Schema.Types.ObjectId,
@@ -142,6 +142,14 @@ const productSchema = new mongoose.Schema(
     os: {
       type: String,
       enum: ["Window", "Linux"],
+    },
+    isMediaProduct: {
+      type: Boolean,
+      default: false,
+    },
+    crossSellDescription: {
+      type: [String],
+      required: false,
     },
     packages: [packagesSchema],
     crossSells: [crossSellSchema],
