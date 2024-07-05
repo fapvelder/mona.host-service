@@ -101,7 +101,6 @@ export const getProductsByIds = async (req, res) => {
     }
 
     const ids = productsInfo.map((product) => product.id);
-
     const products = await ProductModel.find({ _id: { $in: ids } })
       .populate("productType", "name")
       .populate({
@@ -130,10 +129,13 @@ export const getProductsByIds = async (req, res) => {
       return res.status(404).send({ message: "Products not found" });
     }
 
-    const enhancedProducts = products.map((product) => {
+    const orderedProducts = ids.map((id) =>
+      products.find((product) => product.id.toString() === id)
+    );
+    const enhancedProducts = orderedProducts.map((product, index) => {
       const plainProduct = product.toObject(); // Convert to plain object
       const additionalFields = productsInfo.find(
-        (p) => p.id === product._id.toString()
+        (p, pIndex) => pIndex === index
       );
       if (additionalFields) {
         plainProduct.packageName = additionalFields.packageName;
@@ -217,11 +219,13 @@ export const getProductsWithAdditionalFields = async (req, res) => {
     if (products.length === 0) {
       return res.status(404).send({ message: "Products not found" });
     }
-
-    const enhancedProducts = products.map((product) => {
+    const orderedProducts = ids.map((id) =>
+      products.find((product) => product.id.toString() === id)
+    );
+    const enhancedProducts = orderedProducts.map((product, index) => {
       const plainProduct = product.toObject(); // Convert to plain object
       const additionalFields = productsInfo.find(
-        (p) => p.id === product._id.toString()
+        (p, pIndex) => pIndex === index
       );
       if (additionalFields) {
         plainProduct.packageName = additionalFields.packageName;
