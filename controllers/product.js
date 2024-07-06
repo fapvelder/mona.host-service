@@ -2,6 +2,11 @@ import { ProductModel } from "../models/product.js";
 import mongoose from "mongoose";
 import { checkCoupon } from "./coupon.js";
 import axios from "axios";
+import {
+  orderHost,
+  productDomain,
+  productSSLAndCPanel,
+} from "../product-host.js";
 /**
  * @swagger
  * tags:
@@ -257,14 +262,18 @@ export const getProductsWithAdditionalFields = async (req, res) => {
       .map((product) => {
         return {
           id: product._id,
-          name: product.name + " " + product.packageName,
+          name: product.name,
           packageName: product.packageName,
           period: product.period,
           basePrice: product.basePrice,
           os: product.os,
         };
       });
-    return res.status(200).send(filteredProducts);
+    if (req.originalUrl === "/product/get-price-products-by-ids") {
+      return res.status(200).send(filteredProducts);
+    } else {
+      return filteredProducts;
+    }
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -329,7 +338,7 @@ export const getProducts = async (req, res) => {
     res.status(500).send({ message: err.message });
   }
 };
-const checkDomain = async (req, res, domain) => {
+const checkDomain = async (domain) => {
   // try {
   const { data } = await axios.get(
     `${process.env.HOST_URL}/domains/check/available?domains=${domain}`,
@@ -405,7 +414,7 @@ export const calculateTotalPrice = async (req, res) => {
       const promises = [];
       if (domains && domains.length > 0) {
         const domainPromises = domains.map(async (domain) => {
-          const data = await checkDomain(req, res, domain.name);
+          const data = await checkDomain(domain.name);
           if (data) {
             const domainPrice = data.results[0].buy_price * domain.year;
             totalBasePrice += domainPrice;
@@ -520,7 +529,6 @@ export const calculateTotalPrice = async (req, res) => {
 
     const saleByProduct =
       totalBasePriceWithoutDomain - totalSalePriceWithoutDomain;
-    console.log("saleByProduct", totalBasePriceWithoutDomain);
     const item = filterPackages(itemSale);
     let promoSale = 0;
     let promoMessage = "You do not apply any coupon";
@@ -599,6 +607,7 @@ export const calculateTotalPrice = async (req, res) => {
       };
     }
   } catch (err) {
+    console.log("err", err);
     res.status(500).send({ message: err.message });
   }
 };
@@ -907,25 +916,110 @@ export const getSameProducts = async (req, res) => {
 
 export const createOrder = async (req, res) => {
   try {
+    const { domains, userDomain, userData } = req.body;
+    const token = extractBearerToken(req, res);
+    let orderItems = [];
+    let domainProducts = [];
+    const promises = [];
+
+    if (domains && domains.length > 0) {
+      const domainPromises = domains.map(async (domain) => {
+        const data = await checkDomain(domain.name);
+        if (data)
+          domainProducts.push({ ...data.results[0], year: domain.year });
+      });
+      promises.push(...domainPromises);
+    }
     const data = await calculateTotalPrice(req, res);
-    const { domains, products } = req.body;
-    const { totalPriceIncludedVAT, VAT } = data;
-    const order = {
-      client_id: "66852d5d96579f2534c159e2",
-      amount: totalPriceIncludedVAT,
-      override_amount: 1000,
-      vat_amount: VAT,
-      tax_rate: 0.1,
-      payment_method: "transfer",
-      promotion_id: null,
-      notes: {
-        products: products,
-        domains: domains,
-      },
-      order_items: [],
+    const products = await getProductsWithAdditionalFields(req, res);
+
+    const productPromises = products.map(async (product, index) => {
+      if (product.name === "Business" || product.name === "SSL") {
+        const data = await getProductHost(
+          product.name === "Business"
+            ? `${product.name} ${product.packageName}`
+            : `${product.packageName} ${product.name}`,
+          token
+        );
+        const productData = productSSLAndCPanel(product, data, userDomain);
+        orderItems.push(productData);
+      }
+    });
+    promises.push(...productPromises);
+
+    if (domainProducts && domainProducts.length > 0) {
+      domainProducts.map((domain) =>
+        orderItems.push(productDomain(userData, domain))
+      );
+    }
+    const { totalPriceAfterCrossSaleAndPromo, VAT } = data;
+    await Promise.all(promises);
+    const allData = {
+      domainProducts: domainProducts.length > 0 ? domainProducts : [],
+      products: products.length > 0 ? products : [],
+      priceInformation: data,
     };
-    res.status(200).send(data);
+
+    const order = orderHost(
+      userData.clients[0]._id,
+      totalPriceAfterCrossSaleAndPromo,
+      VAT,
+      JSON.stringify(allData),
+      orderItems
+    );
+    if (order) {
+      const data = await createOrderHost(order, token);
+      if (data) {
+        console.log("fetch viet qr");
+        const vietQR = await getVietQR(data._id, token);
+        console.log(vietQR);
+        return res.status(200).send({ data, vietQR });
+      }
+    }
+    return res.status(200).send(data);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
+};
+const getProductHost = async (productName, token) => {
+  const { data } = await axios.get(
+    `${process.env.HOST_URL}/products?search=${productName}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Key: process.env.HOST_KEY,
+      },
+    }
+  );
+  return data.results[0];
+};
+const extractBearerToken = (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.slice(7); // Extract the token part after "Bearer "
+    return token;
+  } else {
+    return { message: "Unauthorized: No token provided" };
+  }
+};
+const createOrderHost = async (order, token) => {
+  const { data } = await axios.post(`${process.env.HOST_URL}/orders`, order, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return data;
+};
+const getVietQR = async (orderID, token) => {
+  console.log("fetching");
+  const { data } = await axios.get(
+    `${process.env.HOST_URL}/payments/vietqr/generate?order_id=${orderID}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return data.qr_data_url;
 };
