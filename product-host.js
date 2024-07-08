@@ -43,7 +43,7 @@ export const orderHost = (clientID, totalPrice, VAT, allData, orderItems) => {
     payment_method: "transfer",
     promotion_id: null,
     notes: `mona-media: ${allData}`,
-    // order_items: orderItems ? orderItems : [],
-    order_items: [],
+    order_items: orderItems ? orderItems : [],
+    // order_items: [],
   };
 };

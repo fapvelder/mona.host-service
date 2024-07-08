@@ -916,7 +916,7 @@ export const getSameProducts = async (req, res) => {
 
 export const createOrder = async (req, res) => {
   try {
-    const { domains, userDomain, userData } = req.body;
+    const { domains, userDomain, userData, payment } = req.body;
     const token = extractBearerToken(req, res);
     let orderItems = [];
     let domainProducts = [];
@@ -952,7 +952,7 @@ export const createOrder = async (req, res) => {
         orderItems.push(productDomain(userData, domain))
       );
     }
-    const { totalPriceAfterCrossSaleAndPromo, VAT } = data;
+    const { totalPriceIncludedVAT, VAT } = data;
     await Promise.all(promises);
     const allData = {
       domainProducts: domainProducts.length > 0 ? domainProducts : [],
@@ -962,7 +962,7 @@ export const createOrder = async (req, res) => {
 
     const order = orderHost(
       userData.clients[0]._id,
-      totalPriceAfterCrossSaleAndPromo,
+      totalPriceIncludedVAT,
       VAT,
       JSON.stringify(allData),
       orderItems
@@ -970,10 +970,13 @@ export const createOrder = async (req, res) => {
     if (order) {
       const data = await createOrderHost(order, token);
       if (data) {
-        console.log("fetch viet qr");
-        const vietQR = await getVietQR(data._id, token);
-        console.log(vietQR);
-        return res.status(200).send({ data, vietQR });
+        if (payment === "acb") {
+          const vietQR = await getVietQR(data._id, token);
+          return res.status(200).send({ data, vietQR });
+        } else if (payment === "vnpay") {
+          const vnpay = await getVNPAY(data._id, token);
+          return res.status(200).send({ data, vnpay });
+        }
       }
     }
     return res.status(200).send(data);
@@ -1012,7 +1015,6 @@ const createOrderHost = async (order, token) => {
   return data;
 };
 const getVietQR = async (orderID, token) => {
-  console.log("fetching");
   const { data } = await axios.get(
     `${process.env.HOST_URL}/payments/vietqr/generate?order_id=${orderID}`,
     {
@@ -1022,4 +1024,17 @@ const getVietQR = async (orderID, token) => {
     }
   );
   return data.qr_data_url;
+};
+const getVNPAY = async (order_id, token) => {
+  const { data } = await axios.post(
+    `${process.env.HOST_URL}/payments/vnpay/media`,
+    { order_id },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Key: `${process.env.HOST_KEY}`,
+      },
+    }
+  );
+  return data.vnpay_payment_url;
 };
