@@ -1,4 +1,4 @@
-import { UserModel } from "../models/user.js";
+// import { UserModel } from "../models/user.js";
 export const getUser = async (req, res) => {
   try {
     const user = await UserModel.find({}).populate("cart").lean();

@@ -12,7 +12,6 @@ import coupon from "./routers/coupon.js";
 import dotenv from "dotenv";
 import setupSwagger from "./swagger.js";
 dotenv.config();
-
 export const app = express();
 const PORT = process.env.port || 5000;
 app.use(bodyParser.json({ limit: "30mb" }));

@@ -1,4 +1,4 @@
-import { CrossSellModel } from "../models/crossSell.js";
+// import { CrossSellModel } from "../models/crossSell.js";
 
 /**
  * @swagger
