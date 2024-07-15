@@ -932,19 +932,19 @@ export const createOrder = async (req, res) => {
     }
     const data = await calculateTotalPrice(req, res);
     const products = await getProductsWithAdditionalFields(req, res);
-    // const productPromises = products.map(async (product, index) => {
-    //   if (product.name === "Business" || product.name === "SSL") {
-    //     const data = await getProductHost(
-    //       product.name === "Business"
-    //         ? `${product.name} ${product.packageName}`
-    //         : `${product.packageName} ${product.name}`,
-    //       token
-    //     );
-    //     const productData = productSSLAndCPanel(product, data, userDomain);
-    //     orderItems.push(productData);
-    //   }
-    // });
-    // promises.push(...productPromises);
+    const productPromises = products.map(async (product, index) => {
+      if (product.name === "Business" || product.name === "SSL") {
+        const data = await getProductHost(
+          product.name === "Business"
+            ? `${product.name} ${product.packageName}`
+            : `${product.packageName} ${product.name}`,
+          token
+        );
+        const productData = productSSLAndCPanel(product, data, userDomain);
+        orderItems.push(productData);
+      }
+    });
+    promises.push(...productPromises);
 
     if (domainProducts && domainProducts.length > 0) {
       domainProducts.map((domain) =>
