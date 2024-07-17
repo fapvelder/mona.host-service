@@ -7,6 +7,7 @@ import {
   productDomain,
   productSSLAndCPanel,
 } from "../product-host.js";
+import { CouponModel } from "../models/coupon.js";
 /**
  * @swagger
  * tags:
@@ -916,7 +917,6 @@ export const getSameProducts = async (req, res) => {
 
 export const createOrder = async (req, res) => {
   try {
-    console.log("create oreder");
     const { domains, userDomain, userData, payment } = req.body;
     const token = extractBearerToken(req, res);
     let orderItems = [];
@@ -954,13 +954,13 @@ export const createOrder = async (req, res) => {
     }
     const { totalPriceIncludedVAT, VAT } = data;
     await Promise.all(promises);
+
     console.log("done promise");
     const allData = {
       domainProducts: domainProducts.length > 0 ? domainProducts : [],
       products: products.length > 0 ? products : [],
       priceInformation: data,
     };
-    console.log("here");
     const order = orderHost(
       userData.clients[0]._id,
       totalPriceIncludedVAT,
@@ -968,8 +968,14 @@ export const createOrder = async (req, res) => {
       JSON.stringify(allData),
       orderItems
     );
+
     if (order) {
       const data = await createOrderHost(order, token);
+      const coupon = await CouponModel.findOne({ code: req.body.coupon });
+      if (coupon) {
+        coupon.totalUsageLimit -= 1;
+        await coupon.save();
+      }
       if (data) {
         if (payment === "acb") {
           const vietQR = await getVietQR(data._id, token);
