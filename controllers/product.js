@@ -968,18 +968,18 @@ export const createOrder = async (req, res) => {
       JSON.stringify(allData),
       orderItems
     );
-    // if (order) {
-    //   const data = await createOrderHost(order, token);
-    //   if (data) {
-    //     if (payment === "acb") {
-    //       const vietQR = await getVietQR(data._id, token);
-    //       return res.status(200).send({ data, vietQR });
-    //     } else if (payment === "vnpay") {
-    //       const vnpay = await getVNPAY(data._id, token);
-    //       return res.status(200).send({ data, vnpay });
-    //     }
-    //   }
-    // }
+    if (order) {
+      const data = await createOrderHost(order, token);
+      if (data) {
+        if (payment === "acb") {
+          const vietQR = await getVietQR(data._id, token);
+          return res.status(200).send({ data, vietQR });
+        } else if (payment === "vnpay") {
+          const vnpay = await getVNPAY(data._id, token);
+          return res.status(200).send({ data, vnpay });
+        }
+      }
+    }
     return res.status(200).send(data);
   } catch (err) {
     res.status(500).send({ message: err.message });
