@@ -916,6 +916,7 @@ export const getSameProducts = async (req, res) => {
 
 export const createOrder = async (req, res) => {
   try {
+    console.log("create oreder");
     const { domains, userDomain, userData, payment } = req.body;
     const token = extractBearerToken(req, res);
     let orderItems = [];
@@ -932,19 +933,19 @@ export const createOrder = async (req, res) => {
     }
     const data = await calculateTotalPrice(req, res);
     const products = await getProductsWithAdditionalFields(req, res);
-    const productPromises = products.map(async (product, index) => {
-      if (product.name === "Business" || product.name === "SSL") {
-        const data = await getProductHost(
-          product.name === "Business"
-            ? `${product.name} ${product.packageName}`
-            : `${product.packageName} ${product.name}`,
-          token
-        );
-        const productData = productSSLAndCPanel(product, data, userDomain);
-        orderItems.push(productData);
-      }
-    });
-    promises.push(...productPromises);
+    // const productPromises = products.map(async (product, index) => {
+    //   if (product.name === "Business" || product.name === "SSL") {
+    //     const data = await getProductHost(
+    //       product.name === "Business"
+    //         ? `${product.name} ${product.packageName}`
+    //         : `${product.packageName} ${product.name}`,
+    //       token
+    //     );
+    //     const productData = productSSLAndCPanel(product, data, userDomain);
+    //     orderItems.push(productData);
+    //   }
+    // });
+    // promises.push(...productPromises);
 
     if (domainProducts && domainProducts.length > 0) {
       domainProducts.map((domain) =>
@@ -953,13 +954,13 @@ export const createOrder = async (req, res) => {
     }
     const { totalPriceIncludedVAT, VAT } = data;
     await Promise.all(promises);
-
+    console.log("done promise");
     const allData = {
       domainProducts: domainProducts.length > 0 ? domainProducts : [],
       products: products.length > 0 ? products : [],
       priceInformation: data,
     };
-
+    console.log("here");
     const order = orderHost(
       userData.clients[0]._id,
       totalPriceIncludedVAT,
@@ -967,18 +968,18 @@ export const createOrder = async (req, res) => {
       JSON.stringify(allData),
       orderItems
     );
-    if (order) {
-      const data = await createOrderHost(order, token);
-      if (data) {
-        if (payment === "acb") {
-          const vietQR = await getVietQR(data._id, token);
-          return res.status(200).send({ data, vietQR });
-        } else if (payment === "vnpay") {
-          const vnpay = await getVNPAY(data._id, token);
-          return res.status(200).send({ data, vnpay });
-        }
-      }
-    }
+    // if (order) {
+    //   const data = await createOrderHost(order, token);
+    //   if (data) {
+    //     if (payment === "acb") {
+    //       const vietQR = await getVietQR(data._id, token);
+    //       return res.status(200).send({ data, vietQR });
+    //     } else if (payment === "vnpay") {
+    //       const vnpay = await getVNPAY(data._id, token);
+    //       return res.status(200).send({ data, vnpay });
+    //     }
+    //   }
+    // }
     return res.status(200).send(data);
   } catch (err) {
     res.status(500).send({ message: err.message });
