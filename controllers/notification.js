@@ -16,6 +16,14 @@ export const createNotification = async (req, res) => {
       email: req.body.email,
       fullName: req.body.fullName,
     };
+    const isInDatabase = await NotificationModel.findOne({
+      email: req.body.email,
+    });
+    if (isInDatabase) {
+      return res
+        .status(403)
+        .send({ message: "Email đã tồn tại trong hệ thống" });
+    }
     const notification = new NotificationModel(newNotification);
     await notification.save();
     res.status(200).json(notification);

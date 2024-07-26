@@ -955,7 +955,6 @@ export const createOrder = async (req, res) => {
     const { totalPriceIncludedVAT, VAT } = data;
     await Promise.all(promises);
 
-    console.log("done promise");
     const allData = {
       domainProducts: domainProducts.length > 0 ? domainProducts : [],
       products: products.length > 0 ? products : [],
