@@ -33,17 +33,25 @@ export const productSSLAndCPanel = (originalProduct, product, userDomain) => {
     order_item_type: "new",
   };
 };
-export const orderHost = (clientID, totalPrice, VAT, allData, orderItems) => {
+export const orderHost = (
+  clientID,
+  totalPrice,
+  VAT,
+  allData,
+  orderItems,
+  discountAmount,
+  promoCode
+) => {
   return {
     client_id: clientID,
     amount: 0,
+    discount_amount: discountAmount,
     override_amount: totalPrice,
-    vat_amount: VAT,
     tax_rate: 0.1,
+    vat_amount: VAT,
     payment_method: "transfer",
-    promotion_id: null,
+    promotion_code: promoCode ? promoCode.code : "",
     notes: `mona-media: ${allData}`,
     order_items: orderItems ? orderItems : [],
-    // order_items: [],
   };
 };

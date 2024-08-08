@@ -474,7 +474,6 @@ export const calculateTotalPrice = async (req, res) => {
                   ).then((price) => {
                     const discount = (crossProd.discountCrossSell || 0) / 100;
                     // totalPrice -= price * discount;
-                    // console.log("total inside", totalPrice);
 
                     itemSale.push({
                       _id: product.id,
@@ -552,7 +551,6 @@ export const calculateTotalPrice = async (req, res) => {
           promoSale = promo.amount;
         }
         if (promo.type === "percentage") {
-          console.log(promo.minTotalPrice);
           const maxDiscount = promo.maxDiscount;
           if (promo.maxDiscount > 0) {
             const discount = totalPrice * (promo.amount / 100);
@@ -650,152 +648,12 @@ export const getVPS = async (req, res) => {
     res.status(500).send({ message: err.message });
   }
 };
-/**
- * @swagger
- * /product-type:
- *   post:
- *     summary: Create a new product option
- *     tags: [Product]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               productID:
- *                 type: string
- *               optionName:
- *                 type: string
- *               optionPrice:
- *                 type: number
- *               basePrice:
- *                 type: number
- *               period:
- *                 type: number
- *               discount:
- *                 type: number
- *               upSell:
- *                 type: boolean
- *               information:
- *                 type: object
- *                 properties:
- *                   feature_tooltip:
- *                      type: string
- *                   features:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         description:
- *                           type: string
- *                         tooltip:
- *                           type: string
- *                   securities:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         description:
- *                           type: string
- *                         tooltip:
- *                           type: string
- *                   services:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         description:
- *                           type: string
- *                         tooltip:
- *                           type: string
- *                   specifications:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         description:
- *                           type: string
- *                         tooltip:
- *                           type: string
- *     responses:
- *       200:
- *         description: The created product option
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                 product:
- *                   type: string
- *                 optionName:
- *                   type: string
- *                 optionPrice:
- *                   type: number
- *                 basePrice:
- *                   type: number
- *                 period:
- *                   type: number
- *                 discount:
- *                   type: number
- *                 upSell:
- *                   type: boolean
- *                 information:
- *                   type: object
- *                   properties:
- *                     features:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *                     securities:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *                     services:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *                     specifications:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           description:
- *                             type: string
- *                           tooltip:
- *                             type: string
- *       500:
- *         description: Server error
- */
+
 export const createProduct = async (req, res, next) => {
   try {
     const { productData } = req.body;
     const newProductDiscount = {
       productType: productData.product,
-      // information: {
-      //   feature_tooltip: productData.featureTooltip,
-      //   features: productData.features,
-      //   securities: productData.securities,
-      //   services: productData.services,
-      //   specifications: productData.specifications,
-      // },
       ...productData,
     };
     const productDiscount = new ProductModel(newProductDiscount);
@@ -905,7 +763,6 @@ export const getSameProducts = async (req, res) => {
   try {
     const { name } = req.query;
     const products = await ProductModel.find({ name: name });
-    console.log(products.length);
     if (!products) {
       return res.status(404).send({ message: "Product not found" });
     }
@@ -952,7 +809,7 @@ export const createOrder = async (req, res) => {
         orderItems.push(productDomain(userData, domain))
       );
     }
-    const { totalPriceIncludedVAT, VAT } = data;
+    const { totalPriceIncludedVAT, VAT, promoSale, coupon } = data;
     await Promise.all(promises);
 
     const allData = {
@@ -965,9 +822,11 @@ export const createOrder = async (req, res) => {
       totalPriceIncludedVAT,
       VAT,
       JSON.stringify(allData),
-      orderItems
+      orderItems,
+      promoSale,
+      coupon
     );
-
+    console.log(order);
     if (order) {
       const data = await createOrderHost(order, token);
       const coupon = await CouponModel.findOne({ code: req.body.coupon });
