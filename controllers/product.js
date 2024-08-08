@@ -826,7 +826,6 @@ export const createOrder = async (req, res) => {
       promoSale,
       coupon
     );
-    console.log(order);
     if (order) {
       const data = await createOrderHost(order, token);
       const coupon = await CouponModel.findOne({ code: req.body.coupon });
