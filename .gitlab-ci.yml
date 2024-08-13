@@ -1,0 +1,32 @@
+stages:
+  - build
+  - push 
+  - deploy
+
+variables:
+  DOCKER_IMAGE: harbor.mona.host/mona-host/monahost-be
+  KUBE_NAMESPACE: mona-host
+
+build_image:
+  stage: build
+  tags:
+    - k8s-bastion
+    
+  script:
+    - docker build -t $DOCKER_IMAGE:latest  .
+
+push_image:
+  stage: push
+  tags:
+    - k8s-bastion
+
+  script:
+    - docker push $DOCKER_IMAGE:latest
+
+deploy_image:
+  stage: deploy
+  tags:
+    - k8s-bastion
+
+  script:
+    - kubectl apply -f /opt/helm-charts-mona-host/mona-host-deployment/monahost-be-deployment.yaml
