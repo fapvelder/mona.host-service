@@ -10,7 +10,7 @@ variables:
 build_image:
   stage: build
   tags:
-    - k8s-bastion
+    - bastion-runner
     
   script:
     - docker build -t $DOCKER_IMAGE:latest  .
@@ -18,7 +18,7 @@ build_image:
 push_image:
   stage: push
   tags:
-    - k8s-bastion
+    - bastion-runner
 
   script:
     - echo "Start test stage 2"
@@ -27,7 +27,7 @@ push_image:
 deploy_image:
   stage: deploy
   tags:
-    - k8s-bastion
+    - bastion-runner
 
   script:
     - kubectl apply -f /opt/helm-charts-mona-host/mona-host-deployment/monahost-be-deployment.yaml
