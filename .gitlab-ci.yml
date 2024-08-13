@@ -21,6 +21,7 @@ push_image:
     - k8s-bastion
 
   script:
+    - echo "Start test stage 2"
     - docker push $DOCKER_IMAGE:latest
 
 deploy_image:
