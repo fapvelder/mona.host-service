@@ -21,7 +21,7 @@ push_image:
     - bastion-runner
 
   script:
-    - echo "Start test stage 2"
+    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin harbor.mona.host
     - docker push $DOCKER_IMAGE:latest
 
 deploy_image:
