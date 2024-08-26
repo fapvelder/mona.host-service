@@ -18,7 +18,7 @@ export const productDomain = (userData, domain) => {
     product_type: "domain",
     domain: domain.domain,
     amount: domain.buy_price,
-    billing_cycle: domain.year,
+    billing_cycle: domain.year * 12,
     order_item_type: "new",
   };
 };
