@@ -49,8 +49,8 @@ export const orderHost = (
     override_amount: totalPrice,
     tax_rate: 0.1,
     vat_amount: VAT,
+    total_amount: totalPrice,
     payment_method: "transfer",
-    promotion_code: promoCode ? promoCode.code : "",
     notes: `mona-media: ${allData}`,
     order_items: orderItems ? orderItems : [],
   };
