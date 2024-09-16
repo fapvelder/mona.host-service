@@ -8,95 +8,7 @@ import {
   productSSLAndCPanel,
 } from "../product-host.js";
 import { CouponModel } from "../models/coupon.js";
-/**
- * @swagger
- * tags:
- *   name: Product
- *   description: Product management
- */
 
-/**
- * @swagger
- * /product-type:
- *   get:
- *     summary: Retrieve a list of product types
- *     tags: [Product]
- *     parameters:
- *       - in: query
- *         name: optionName
- *         schema:
- *           type: string
- *         description: The name of the product option to search for
- *     responses:
- *       200:
- *         description: A list of product types
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                   product:
- *                     type: string
- *                   optionName:
- *                     type: string
- *                   optionPrice:
- *                     type: number
- *                   basePrice:
- *                     type: number
- *                   period:
- *                     type: number
- *                   discount:
- *                     type: number
- *                   upSell:
- *                     type: boolean
- *                   information:
- *                     type: object
- *                     properties:
- *                       feature_tooltip:
- *                         type: string
- *                       features:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             description:
- *                               type: string
- *                             tooltip:
- *                               type: string
- *                       securities:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             description:
- *                               type: string
- *                             tooltip:
- *                               type: string
- *                       services:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             description:
- *                               type: string
- *                             tooltip:
- *                               type: string
- *                       specifications:
- *                         type: array
- *                         items:
- *                           type: object
- *                           properties:
- *                             description:
- *                               type: string
- *                             tooltip:
- *                               type: string
- *       500:
- *         description: Server error
- */
 export const getProductsByIds = async (req, res) => {
   try {
     const productsInfo = req.body.products; // Assuming the array of objects is passed in the request body
@@ -417,7 +329,15 @@ export const calculateTotalPrice = async (req, res) => {
         const domainPromises = domains.map(async (domain) => {
           const data = await checkDomain(domain.name);
           if (data) {
-            const domainPrice = data.results[0].buy_price * domain.year;
+            let domainPrice;
+            if (domain.year > 1) {
+              const remain_year = domain.year - 1;
+              domainPrice =
+                data.results[0].renew_price * remain_year +
+                data.results[0].buy_price;
+            } else {
+              domainPrice = data.results[0].buy_price * domain.year;
+            }
             totalBasePrice += domainPrice;
             totalPrice += domainPrice;
           }
