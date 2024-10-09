@@ -8,6 +8,7 @@ import {
   productSSLAndCPanel,
 } from "../product-host.js";
 import { CouponModel } from "../models/coupon.js";
+import { axiosInstance } from "../utils.js";
 
 export const getProductsByIds = async (req, res) => {
   try {
@@ -791,11 +792,15 @@ const extractBearerToken = (req, res) => {
   }
 };
 const createOrderHost = async (order, token) => {
-  const { data } = await axios.post(`${process.env.HOST_URL}/orders`, order, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const { data } = await axiosInstance.post(
+    `${process.env.HOST_URL}/orders`,
+    order,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
   return data;
 };
 const getVietQR = async (orderID, token) => {
